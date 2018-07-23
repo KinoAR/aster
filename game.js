@@ -18,27 +18,31 @@ const config = {
 const game = new Phaser.Game(config);
 
 function preload() {
-  this.load.image('ship', 'assets/ship.png');
+  this.load.image('ship', 'assets/spaceship.png');
+  this.load.image('bullet', 'assets/bullet.png');
   this.load.image('asteroid1', 'assets/asteroid1.png');
   this.load.image('asteroid2','assets/asteroid2.png');
   this.load.image('asteroid3', 'assets/asteroid3.png');
 }
 
 function create() {
+  this.scoreText = this.add.text(50, 40, "Score:  0");
+  this.lifeText = this.add.text(50, 50,  "Lives:  0");
+
 
 }
 
 function update() {
   this.input.keyboard.on('keydown_DOWN', () => {
-    this.paddle1.body.velocity.y = paddleSpeed;
+    this.ship.body.velocity.y = paddleSpeed;
   });
   this.input.keyboard.on('keyup_DOWN', () => {
-    this.paddle1.body.velocity.y = 0;
+    this.ship.body.velocity.y = 0;
   })
   this.input.keyboard.on('keydown_UP', () => {
-    this.paddle1.body.velocity.y = -paddleSpeed;
+    this.ship.body.velocity.y = -paddleSpeed;
   });
   this.input.keyboard.on('keyup_UP', () => {
-    this.paddle1.body.velocity.y = 0;
+    this.ship.body.velocity.y = 0;
   })
 }
