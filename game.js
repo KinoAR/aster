@@ -16,23 +16,38 @@ const config = {
 };
 
 const game = new Phaser.Game(config);
-const speed = 3;
+const speed = 250;
 function preload() {
   this.load.image('ship', 'assets/spaceship.png');
   this.load.image('bullet', 'assets/bullet.png');
-  this.load.image('asteroid1', 'assets/asteroid1.png');
-  this.load.image('asteroid2','assets/asteroid2.png');
-  this.load.image('asteroid3', 'assets/asteroid3.png');
+  this.load.image('enemybullet', 'assets/enemybullet.png');
+  this.load.image('enemy1', 'assets/enemy1.png');
+  this.load.image('enemy2','assets/enemy2.png');
 }
 
 function create() {
+  this.lives = 3;
   this.scoreText = this.add.text(50, 40, "Score:  0");
-  this.lifeText = this.add.text(50, 50,  "Lives:  0");
+  this.livesText = this.add.text(50, 50,  `Lives:  ${this.lives}`);
 
-
+  this.player = this.physics.add.sprite(400, 250, 'ship');
+  this.player.setCollideWorldBounds(true);
+  this.playerBullets = [];
 }
 
 function update() {
+  this.input.keyboard.on('keydown_RIGHT', () => {
+    this.ship.body.velocity.x = speed;
+  })
+  this.input.keyboard.on('keyup_RIGHT', () => {
+    this.ship.body.velocity.x = 0;
+  });
+  this.input.keyboard.on('keydown_LEFT', () => {
+    this.ship.body.velocity.x = -speed;
+  });
+  this.input.keyboard.on('keyup_LEFT', () => {
+    this.ship.body.velocity.x = 0;
+  })
   this.input.keyboard.on('keydown_DOWN', () => {
     this.ship.body.velocity.y = speed;
   });
@@ -45,4 +60,6 @@ function update() {
   this.input.keyboard.on('keyup_UP', () => {
     this.ship.body.velocity.y = 0;
   })
+
+  this.livesText.setText(`Lives:  ${this.lives}`)
 }
