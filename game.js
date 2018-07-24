@@ -16,7 +16,7 @@ const config = {
 };
 
 const game = new Phaser.Game(config);
-
+const speed = 3;
 function preload() {
   this.load.image('ship', 'assets/spaceship.png');
   this.load.image('bullet', 'assets/bullet.png');
@@ -34,13 +34,13 @@ function create() {
 
 function update() {
   this.input.keyboard.on('keydown_DOWN', () => {
-    this.ship.body.velocity.y = paddleSpeed;
+    this.ship.body.velocity.y = speed;
   });
   this.input.keyboard.on('keyup_DOWN', () => {
     this.ship.body.velocity.y = 0;
   })
   this.input.keyboard.on('keydown_UP', () => {
-    this.ship.body.velocity.y = -paddleSpeed;
+    this.ship.body.velocity.y = -speed;
   });
   this.input.keyboard.on('keyup_UP', () => {
     this.ship.body.velocity.y = 0;
