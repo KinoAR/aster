@@ -55,6 +55,7 @@ export class SceneGame extends Phaser.Scene {
     enemies.forEach( enemy => {
       const enemySprite = this.add.existing(enemy);
       this.physics.add.existing(enemySprite);
+      this.physics.add.collider(this.player, enemySprite);
     });
     this.currentPattern = enemies;
   }
