@@ -1,3 +1,6 @@
+import {Cruiser} from './cruiser.js';
+import {BattleShip} from './battleship.js';
+
 export class SceneGame extends Phaser.Scene {
   constructor() {
     super({key:'SceneGame'});
@@ -8,6 +11,18 @@ export class SceneGame extends Phaser.Scene {
   }
 
   create() {
+    this.player = this.physics.add.sprite(400, 250, 'ship');
+    this.enemyCruiser = this.add.existing(new Cruiser(this, 500, 250, 'enemy1'));
+    this.enemyBattleShip = this.add.existing(new BattleShip(this, 500, 300, 'enemy2'));
+    this.physics.add.existing(this.enemyBattleShip);
+    this.physics.add.existing(this.enemyCruiser);
+    console.log(this.enemyCruiser);
+    this.player.setAngle(90);
+    this.player.setCollideWorldBounds(true);
+    this.playerBullets = [];
+    this.key = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
+    this.processPlayerControls();
+
     this.bulletWait = 5;
     this.bulletCooldown = this.bulletWait;
     this.bulletSpeed = 400;
@@ -15,19 +30,17 @@ export class SceneGame extends Phaser.Scene {
     this.lives = 3;
     this.scoreText = this.add.text(50, 40, "Score:  0");
     this.livesText = this.add.text(50, 60, `Lives:  ${this.lives}`);
-
-    this.player = this.physics.add.sprite(400, 250, 'ship');
-    this.player.setAngle(90);
-    this.player.setCollideWorldBounds(true);
-    this.playerBullets = [];
-    this.key = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
-    this.processPlayerControls();
   }
 
   update() {
     this.processCoolDowns();
     this.processBulletControls();
+    this.processEnemyMovement();
     this.livesText.setText(`Lives:  ${this.lives}`)
+  }
+
+  processEnemyCreation() {
+    
   }
 
   processCoolDowns() {
@@ -66,6 +79,11 @@ export class SceneGame extends Phaser.Scene {
       this.input.keyboard.on('keyup_UP', () => {
         this.player.body.velocity.y = 0;
       })
+  }
+
+  processEnemyMovement() {
+    this.enemyBattleShip.update();
+    this.enemyCruiser.update();
   }
 
   firePlayerBullet() {
