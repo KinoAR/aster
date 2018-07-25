@@ -1,6 +1,6 @@
 import {Cruiser} from './cruiser.js';
 import {BattleShip} from './battleship.js';
-
+import {EnemyPatterns} from "./enemypatterns.js";
 export class SceneGame extends Phaser.Scene {
   constructor() {
     super({key:'SceneGame'});
@@ -11,12 +11,14 @@ export class SceneGame extends Phaser.Scene {
   }
 
   create() {
+    this.currentPattern = [];
     this.player = this.physics.add.sprite(400, 250, 'ship');
-    this.enemyCruiser = this.add.existing(new Cruiser(this, 500, 250, 'enemy1'));
-    this.enemyBattleShip = this.add.existing(new BattleShip(this, 500, 300, 'enemy2'));
-    this.physics.add.existing(this.enemyBattleShip);
-    this.physics.add.existing(this.enemyCruiser);
-    console.log(this.enemyCruiser);
+    // this.enemyCruiser = this.add.existing(new Cruiser(this, 500, 250, 'enemy1'));
+    // this.enemyBattleShip = this.add.existing(new BattleShip(this, 500, 300, 'enemy2'));
+    // this.physics.add.existing(this.enemyBattleShip);
+    // this.physics.add.existing(this.enemyCruiser);
+    // console.log(this.enemyCruiser);
+    this.createEnemies();
     this.player.setAngle(90);
     this.player.setCollideWorldBounds(true);
     this.playerBullets = [];
@@ -40,7 +42,21 @@ export class SceneGame extends Phaser.Scene {
   }
 
   processEnemyCreation() {
-    
+
+  }
+
+  createEnemies() {
+    const pattern = EnemyPatterns[ Math.floor(Math.random() * EnemyPatterns.length)];
+    const enemies = pattern.map(enemyData => {
+      const {y, type} = enemyData;
+      return enemyData.type === 'enemy1' ? new Cruiser(this, 850, y, type) 
+      : new BattleShip(this, 850,  y, type);
+    });
+    enemies.forEach( enemy => {
+      const enemySprite = this.add.existing(enemy);
+      this.physics.add.existing(enemySprite);
+    });
+    this.currentPattern = enemies;
   }
 
   processCoolDowns() {
@@ -82,8 +98,11 @@ export class SceneGame extends Phaser.Scene {
   }
 
   processEnemyMovement() {
-    this.enemyBattleShip.update();
-    this.enemyCruiser.update();
+    this.currentPattern.forEach(enemy => {
+      if(enemy !== undefined && enemy !== null) {
+        enemy.update();
+      }
+    })
   }
 
   firePlayerBullet() {
