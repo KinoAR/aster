@@ -2,6 +2,7 @@ export class Cruiser extends Phaser.GameObjects.Sprite {
   constructor(scene, x, y, texture, frame=undefined) {
     super(scene, x, y, texture, frame);
     this.deathTime = 1500;
+    this.scoreAmount = 100;
     this.setAngle(180);
   }
 
@@ -16,9 +17,14 @@ export class Cruiser extends Phaser.GameObjects.Sprite {
       this.body.checkCollision.all = false;
       this.body.onCollide = false;
       this.alpha = 0;
+      this.emit("death");
       setTimeout(() => {
         this.destroy();
       }, this.deathTime);
     }
+  }
+
+  getScoreAmount() {
+    return this.scoreAmount;
   }
 }

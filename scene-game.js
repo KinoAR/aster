@@ -32,7 +32,8 @@ export class SceneGame extends Phaser.Scene {
     this.bulletSpeed = 400;
     this.playerBulletCap = 15;
     this.lives = 3;
-    this.scoreText = this.add.text(50, 40, "Score:  0");
+    this.score = 0;
+    this.scoreText = this.add.text(50, 40, `Score:  ${this.score}`);
     this.livesText = this.add.text(50, 60, `Lives:  ${this.lives}`);
   }
 
@@ -50,7 +51,7 @@ export class SceneGame extends Phaser.Scene {
         initialObject.die();
         this.lives-= 1;
         if(this.lives <= 0) {
-          this.scene.start('SceneGameOver');
+          this.scene.start('SceneGameOver', {score: this.score });
         }
       }
     });
@@ -68,7 +69,7 @@ export class SceneGame extends Phaser.Scene {
     this.processCoolDowns();
     this.processBulletControls();
     this.processEnemyMovement();
-    this.livesText.setText(`Lives:  ${this.lives}`)
+    this.updateGameText();
   }
 
   processEnemyCreation() {
@@ -88,6 +89,9 @@ export class SceneGame extends Phaser.Scene {
       this.physics.add.collider(this.player, enemySprite);
       enemySprite.body.immovable = true;
       enemySprite.body.checkCollision.left = true;
+      enemySprite.once('death', () => {
+        this.score += enemySprite.getScoreAmount();
+      });
     });
     this.currentPattern = enemies;
   }
@@ -100,6 +104,19 @@ export class SceneGame extends Phaser.Scene {
      if (this.key.isDown) {
        this.firePlayerBullet();
      }
+  }
+
+  processEnemyMovement() {
+    this.currentPattern.forEach(enemy => {
+      if (!R.isNil(enemy)) {
+        enemy.update();
+      }
+    })
+  }
+
+  updateGameText() {
+    this.livesText.setText(`Lives:  ${this.lives}`)
+    this.scoreText.setText(`Score: ${this.score}`);
   }
 
   processPlayerControls() {
@@ -128,14 +145,6 @@ export class SceneGame extends Phaser.Scene {
       this.input.keyboard.on('keyup_UP', () => {
         this.player.body.velocity.y = 0;
       })
-  }
-
-  processEnemyMovement() {
-    this.currentPattern.forEach(enemy => {
-      if(!R.isNil(enemy)) {
-        enemy.update();
-      }
-    })
   }
 
   firePlayerBullet() {
