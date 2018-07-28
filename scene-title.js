@@ -8,7 +8,7 @@ export class SceneTitle extends Phaser.Scene {
   }
 
   create() {
-    this.titleText = this.add.text(400, 300, 'Aster', {
+    this.titleText = this.add.text(375, 275, 'Aster', {
         backgroundColor:'black',
         color: 'white',
         fontStyle: 'bold',

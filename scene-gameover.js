@@ -8,7 +8,10 @@ export class SceneGameOver extends Phaser.Scene {
   }
 
   create() {
-
+    this.gameOverText = this.add.text(330, 250, "Game Over", {
+      fontSize: '40px',
+      color: 'red',
+    });
   }
 
   update() {

@@ -12,13 +12,14 @@ export class SceneGame extends Phaser.Scene {
 
   create() {
     this.currentPattern = [];
-    this.player = this.physics.add.sprite(400, 250, 'ship');
-    // this.enemyCruiser = this.add.existing(new Cruiser(this, 500, 250, 'enemy1'));
-    // this.enemyBattleShip = this.add.existing(new BattleShip(this, 500, 300, 'enemy2'));
-    // this.physics.add.existing(this.enemyBattleShip);
-    // this.physics.add.existing(this.enemyCruiser);
-    // console.log(this.enemyCruiser);
+    this.startCoordinates = {x:300, y: 300};
+    const {x, y} = this.startCoordinates;
+    this.player = this.physics.add.sprite(x,y, 'ship');
+    this.player.body.checkCollision.all = true;
+    this.player.body.onCollide = true;
+  
     this.createEnemies();
+    this.setupCollisionDetection();
     this.player.setAngle(90);
     this.player.setCollideWorldBounds(true);
     this.playerBullets = [];
@@ -32,6 +33,26 @@ export class SceneGame extends Phaser.Scene {
     this.lives = 3;
     this.scoreText = this.add.text(50, 40, "Score:  0");
     this.livesText = this.add.text(50, 60, `Lives:  ${this.lives}`);
+  }
+
+  setupCollisionDetection() {
+    this.physics.world.on('collide', (collision, initialObject) => {
+      if(initialObject instanceof BattleShip || initialObject instanceof Cruiser) {
+        collision.body.checkCollision.all = false;
+        setTimeout(() => {
+          if(R.isNil(collision.body))
+            collision.body.checkCollision.all = true;
+        }, 1500);
+
+        const {x, y} = this.startCoordinates;
+        collision.body.reset(x, y);
+        initialObject.die();
+        this.lives-= 1;
+        if(this.lives <= 0) {
+          this.scene.start('SceneGameOver');
+        }
+      }
+    });
   }
 
   update() {
@@ -56,6 +77,8 @@ export class SceneGame extends Phaser.Scene {
       const enemySprite = this.add.existing(enemy);
       this.physics.add.existing(enemySprite);
       this.physics.add.collider(this.player, enemySprite);
+      enemySprite.body.immovable = true;
+      enemySprite.body.checkCollision.left = true;
     });
     this.currentPattern = enemies;
   }
@@ -100,7 +123,7 @@ export class SceneGame extends Phaser.Scene {
 
   processEnemyMovement() {
     this.currentPattern.forEach(enemy => {
-      if(enemy !== undefined && enemy !== null) {
+      if(!R.isNil(enemy)) {
         enemy.update();
       }
     })
