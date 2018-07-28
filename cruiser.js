@@ -14,6 +14,8 @@ export class Cruiser extends Phaser.GameObjects.Sprite {
   die() {
     if(!R.isNil(this.body)) {
       this.body.checkCollision.all = false;
+      this.body.onCollide = false;
+      this.alpha = 0;
       setTimeout(() => {
         this.destroy();
       }, this.deathTime);

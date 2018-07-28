@@ -20,6 +20,7 @@ export class SceneGame extends Phaser.Scene {
   
     this.createEnemies();
     this.setupCollisionDetection();
+    this.setupOverlapDetection();
     this.player.setAngle(90);
     this.player.setCollideWorldBounds(true);
     this.playerBullets = [];
@@ -51,6 +52,14 @@ export class SceneGame extends Phaser.Scene {
         if(this.lives <= 0) {
           this.scene.start('SceneGameOver');
         }
+      }
+    });
+  }
+
+  setupOverlapDetection() {
+    this.physics.world.on('overlap', (overlap, initialObject) => {
+      if(initialObject instanceof BattleShip || initialObject instanceof Cruiser) {
+        initialObject.die();
       }
     });
   }
@@ -133,6 +142,12 @@ export class SceneGame extends Phaser.Scene {
     if(this.bulletCooldown <= 0) {
       const {x, y} = this.player;
       const bullet = this.physics.add.sprite(x + this.player.width / 2, y, 'bullet');
+      bullet.body.onOverlap = true;
+      this.currentPattern.forEach(enemy => {
+        if(!R.isNil(enemy)) {
+          this.physics.add.overlap(bullet, enemy);
+        }
+      });
       bullet.body.velocity.x = this.bulletSpeed;
       this.bulletCooldown = this.bulletWait;
       this.playerBullets.push(bullet);
