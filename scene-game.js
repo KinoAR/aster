@@ -21,6 +21,7 @@ export class SceneGame extends Phaser.Scene {
     this.createEnemies();
     this.setupCollisionDetection();
     this.setupOverlapDetection();
+    this.setupEvents();
     this.player.setAngle(90);
     this.player.setCollideWorldBounds(true);
     this.playerBullets = [];
@@ -42,16 +43,17 @@ export class SceneGame extends Phaser.Scene {
       if(initialObject instanceof BattleShip || initialObject instanceof Cruiser) {
         collision.body.checkCollision.all = false;
         setTimeout(() => {
-          if(R.isNil(collision.body))
+          if(!R.isNil(collision.body))
             collision.body.checkCollision.all = true;
         }, 1500);
 
         const {x, y} = this.startCoordinates;
         collision.body.reset(x, y);
         initialObject.die();
-        this.lives-= 1;
+        this.lives = R.clamp(0, 99, this.lives - 1);
         if(this.lives <= 0) {
-          this.scene.start('SceneGameOver', {score: this.score });
+          this.player.visible = false;
+          this.events.emit("gameOver");
         }
       }
     });
@@ -65,15 +67,43 @@ export class SceneGame extends Phaser.Scene {
     });
   }
 
+  setupEvents() {
+    this.events.once('gameOver', () => {
+      setTimeout(() => {
+        this.scene.start('SceneGameOver', {
+          score: this.score
+        });
+      }, 750);
+    })
+  }
+
   update() {
     this.processCoolDowns();
     this.processBulletControls();
     this.processEnemyMovement();
+    this.processEnemyCreation();
     this.updateGameText();
   }
 
   processEnemyCreation() {
+    const enemyOffScreen = (enemy) => !R.isNil(enemy) ? enemy.x < 0 : false;
+    const enemyInvisible = (enemy) => !R.isNil(enemy) ? enemy.visible === false : false;
+    if(!R.isEmpty(this.currentPattern)) {
+      if (R.any(enemyOffScreen)(this.currentPattern)) {
+        this.removePreviousEnemies();
+        this.createEnemies();
+      }
+    }
 
+    if(R.all(enemyInvisible)(this.currentPattern)) {
+      this.removePreviousEnemies();
+      this.createEnemies();
+    }
+  }
+
+  removePreviousEnemies() {
+    this.currentPattern.forEach(enemy => enemy.destroy());
+    this.currentPattern.length = 0;
   }
 
   createEnemies() {
@@ -91,6 +121,7 @@ export class SceneGame extends Phaser.Scene {
       enemySprite.body.checkCollision.left = true;
       enemySprite.once('death', () => {
         this.score += enemySprite.getScoreAmount();
+        enemySprite.die();
       });
     });
     this.currentPattern = enemies;

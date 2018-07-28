@@ -1,7 +1,7 @@
 export class BattleShip extends Phaser.Physics.Arcade.Sprite {
   constructor(scene, x, y, texture, frame=undefined) {
     super(scene, x, y, texture, frame);
-    this.deathTime = 1500;
+    this.deathTime = 100;
     this.scoreAmount = 150;
     this.setAngle(-90);
   }
@@ -16,7 +16,7 @@ export class BattleShip extends Phaser.Physics.Arcade.Sprite {
     if (!R.isNil(this.body)) {
       this.body.checkCollision.all = false;
       this.body.onCollide = false;
-      this.alpha = 0;
+      this.visible = false;
       this.emit("death");
       setTimeout(() => {
         this.destroy();
