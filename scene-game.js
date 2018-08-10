@@ -11,13 +11,16 @@ export class SceneGame extends Phaser.Scene {
   }
 
   create() {
+    this.startMusic();
     this.currentPattern = [];
     this.startCoordinates = {x:300, y: 300};
+    this.invincibleWait = 120;
+    this.invincibleTime = 0;
+    this.died = false;
     const {x, y} = this.startCoordinates;
     this.player = this.physics.add.sprite(x,y, 'ship');
     this.player.body.checkCollision.all = true;
     this.player.body.onCollide = true;
-  
     this.createEnemies();
     this.setupCollisionDetection();
     this.setupOverlapDetection();
@@ -38,6 +41,11 @@ export class SceneGame extends Phaser.Scene {
     this.livesText = this.add.text(50, 60, `Lives:  ${this.lives}`);
   }
 
+  startMusic() {
+    this.sound.stopAll();
+    this.sound.play('game',{loop:true});
+  }
+
   setupCollisionDetection() {
     this.physics.world.on('collide', (collision, initialObject) => {
       if(initialObject instanceof BattleShip || initialObject instanceof Cruiser) {
@@ -47,13 +55,17 @@ export class SceneGame extends Phaser.Scene {
             collision.body.checkCollision.all = true;
         }, 1500);
 
-        const {x, y} = this.startCoordinates;
-        collision.body.reset(x, y);
-        initialObject.die();
-        this.lives = R.clamp(0, 99, this.lives - 1);
-        if(this.lives <= 0) {
-          this.player.visible = false;
-          this.events.emit("gameOver");
+        if(this.invincibleTime <= 0) {
+          const {x, y} = this.startCoordinates;
+          collision.body.reset(x, y);
+          initialObject.die();
+          this.lives = R.clamp(0, 99, this.lives - 1);
+          this.died = true;
+          this.invincibleTime = this.invincibleWait;
+          if(this.lives <= 0) {
+            this.player.visible = false;
+            this.events.emit("gameOver");
+          }
         }
       }
     });
@@ -69,20 +81,33 @@ export class SceneGame extends Phaser.Scene {
 
   setupEvents() {
     this.events.once('gameOver', () => {
+      this.sound.stopAll();
+      this.sound.play('warp');
       setTimeout(() => {
         this.scene.start('SceneGameOver', {
           score: this.score
         });
-      }, 750);
+      }, 1750);
     })
   }
 
   update() {
+    this.processDeathInvincible();
     this.processCoolDowns();
     this.processBulletControls();
     this.processEnemyMovement();
     this.processEnemyCreation();
     this.updateGameText();
+  }
+
+  processDeathInvincible() {
+    if(this.died === true)
+      this.invincibleTime = 
+        R.clamp(0, this.invincibleWait, this.invincibleTime - 1);
+    
+    if(this.invincibleTime <= 0 && this.died === true) {
+      this.died = false;
+    }
   }
 
   processEnemyCreation() {

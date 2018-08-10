@@ -8,8 +8,14 @@ export class SceneGameOver extends Phaser.Scene {
   }
 
   create() {
+    this.startMusic();
     this.setupText();
     this.setupRetry();
+  }
+
+  startMusic() {
+    this.sound.stopAll();
+    this.sound.play('gameover', {loop:true});
   }
 
   setupText() {
