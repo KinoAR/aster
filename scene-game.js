@@ -11,30 +11,107 @@ export class SceneGame extends Phaser.Scene {
   }
 
   create() {
+    //Scene Initialization
     this.startMusic();
-    this.currentPattern = [];
-    this.startCoordinates = {x:300, y: 300};
-    this.invincibleWait = 120;
-    this.invincibleTime = 0;
-    this.died = false;
-    const {x, y} = this.startCoordinates;
-    this.player = this.physics.add.sprite(x,y, 'ship');
-    this.player.body.checkCollision.all = true;
-    this.player.body.onCollide = true;
-    this.createEnemies();
+
+    this.setupSceneDefaults();
+    this.setupPlayer();    
+    this.setupPlayerControls();
     this.setupCollisionDetection();
     this.setupOverlapDetection();
     this.setupEvents();
+    this.setupBulletConfiguration();
+    this.setupLivesAndScore();
+
+    this.createEnemies();
+  }
+
+  setupSceneDefaults() {
+    this.currentPattern = [];
+    this.startCoordinates = { x: 300, y: 300 };
+    this.invincibleWait = 120;
+    this.invincibleTime = 0;
+    this.died = false;
+  }
+
+  setupPlayer() {
+    const { x, y } = this.startCoordinates;
+    this.player = this.physics.add.sprite(x, y, 'ship');
+    this.player.body.checkCollision.all = true;
+    this.player.body.onCollide = true;
     this.player.setAngle(90);
     this.player.setCollideWorldBounds(true);
     this.playerBullets = [];
     this.key = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
-    this.processPlayerControls();
+    this.damageTween = this.tweens.create({
+      alpha: 0,
+      duration: 300,
+      yoyo: true,
+      ease: 'Sine.easeInOut',
+      repeat: -1,
+      targets: this.player,
+    });
+  }
 
+  setupPlayerControls() {
+    const speed = 250;
+    this.input.keyboard.on('keydown_RIGHT', () => {
+      this.player.body.velocity.x = speed;
+    })
+    this.input.keyboard.on('keyup_RIGHT', () => {
+      this.player.body.velocity.x = 0;
+    });
+    this.input.keyboard.on('keydown_LEFT', () => {
+      this.player.body.velocity.x = -speed;
+    });
+    this.input.keyboard.on('keyup_LEFT', () => {
+      this.player.body.velocity.x = 0;
+    })
+    this.input.keyboard.on('keydown_DOWN', () => {
+      this.player.body.velocity.y = speed;
+    });
+    this.input.keyboard.on('keyup_DOWN', () => {
+      this.player.body.velocity.y = 0;
+    })
+    this.input.keyboard.on('keydown_UP', () => {
+      this.player.body.velocity.y = -speed;
+    });
+    this.input.keyboard.on('keyup_UP', () => {
+      this.player.body.velocity.y = 0;
+    })
+  }
+
+  createEnemies() {
+    const pattern = EnemyPatterns[Math.floor(Math.random() * EnemyPatterns.length)];
+    const enemies = pattern.map(enemyData => {
+      const { y, type } = enemyData;
+      return enemyData.type === 'enemy1' ? new Cruiser(this, 850, y, type)
+        : new BattleShip(this, 850, y, type);
+    });
+    enemies.forEach(enemy => {
+      const enemySprite = this.add.existing(enemy);
+      this.physics.add.existing(enemySprite);
+      this.physics.add.collider(this.player, enemySprite);
+      enemySprite.body.immovable = true;
+      enemySprite.body.checkCollision.left = true;
+      enemySprite.once('death', () => {
+        this.score += enemySprite.getScoreAmount();
+        enemySprite.die();
+      });
+    });
+    this.currentPattern = enemies;
+  }
+
+
+
+  setupBulletConfiguration() {
     this.bulletWait = 5;
     this.bulletCooldown = this.bulletWait;
     this.bulletSpeed = 400;
     this.playerBulletCap = 15;
+  }
+
+  setupLivesAndScore() {
     this.lives = 3;
     this.score = 0;
     this.scoreText = this.add.text(50, 40, `Score:  ${this.score}`);
@@ -62,6 +139,7 @@ export class SceneGame extends Phaser.Scene {
           this.lives = R.clamp(0, 99, this.lives - 1);
           this.died = true;
           this.invincibleTime = this.invincibleWait;
+          // this.player.tint = 0xff000;
           if(this.lives <= 0) {
             this.player.visible = false;
             this.events.emit("gameOver");
@@ -92,7 +170,7 @@ export class SceneGame extends Phaser.Scene {
   }
 
   update() {
-    this.processDeathInvincible();
+    this.processPlayerDeath();
     this.processCoolDowns();
     this.processBulletControls();
     this.processEnemyMovement();
@@ -100,14 +178,22 @@ export class SceneGame extends Phaser.Scene {
     this.updateGameText();
   }
 
-  processDeathInvincible() {
-    if(this.died === true)
-      this.invincibleTime = 
+  processPlayerDeath() {
+    if(this.died === true) {
+      this.invincibleTime =
         R.clamp(0, this.invincibleWait, this.invincibleTime - 1);
+        this.tweens.existing(this.damageTween);
+    }
     
     if(this.invincibleTime <= 0 && this.died === true) {
       this.died = false;
+      this.tweens.killTweensOf(this.player);
+      this.player.alpha = 1;
     }
+  }
+
+  processDamageTween() {
+
   }
 
   processEnemyCreation() {
@@ -131,26 +217,7 @@ export class SceneGame extends Phaser.Scene {
     this.currentPattern.length = 0;
   }
 
-  createEnemies() {
-    const pattern = EnemyPatterns[ Math.floor(Math.random() * EnemyPatterns.length)];
-    const enemies = pattern.map(enemyData => {
-      const {y, type} = enemyData;
-      return enemyData.type === 'enemy1' ? new Cruiser(this, 850, y, type) 
-      : new BattleShip(this, 850,  y, type);
-    });
-    enemies.forEach( enemy => {
-      const enemySprite = this.add.existing(enemy);
-      this.physics.add.existing(enemySprite);
-      this.physics.add.collider(this.player, enemySprite);
-      enemySprite.body.immovable = true;
-      enemySprite.body.checkCollision.left = true;
-      enemySprite.once('death', () => {
-        this.score += enemySprite.getScoreAmount();
-        enemySprite.die();
-      });
-    });
-    this.currentPattern = enemies;
-  }
+  
 
   processCoolDowns() {
     this.bulletCooldown-=1;
@@ -175,33 +242,7 @@ export class SceneGame extends Phaser.Scene {
     this.scoreText.setText(`Score: ${this.score}`);
   }
 
-  processPlayerControls() {
-      const speed = 250;
-      this.input.keyboard.on('keydown_RIGHT', () => {
-        this.player.body.velocity.x = speed;
-      })
-      this.input.keyboard.on('keyup_RIGHT', () => {
-        this.player.body.velocity.x = 0;
-      });
-      this.input.keyboard.on('keydown_LEFT', () => {
-        this.player.body.velocity.x = -speed;
-      });
-      this.input.keyboard.on('keyup_LEFT', () => {
-        this.player.body.velocity.x = 0;
-      })
-      this.input.keyboard.on('keydown_DOWN', () => {
-        this.player.body.velocity.y = speed;
-      });
-      this.input.keyboard.on('keyup_DOWN', () => {
-        this.player.body.velocity.y = 0;
-      })
-      this.input.keyboard.on('keydown_UP', () => {
-        this.player.body.velocity.y = -speed;
-      });
-      this.input.keyboard.on('keyup_UP', () => {
-        this.player.body.velocity.y = 0;
-      })
-  }
+ 
 
   firePlayerBullet() {
     if(this.bulletCooldown <= 0) {
